@@ -38,9 +38,18 @@ app = FastAPI()
  # def serve_index():
  #     return FileResponse("index.html")
 
+
 class FileUploadResponse(BaseModel):
     url: str
     message: str
+
+# Registration request model
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "user"
+    dob: str = ""
+    phone: str = ""
 
 @app.post("/upload", response_model=FileUploadResponse)
 async def upload_file(file: UploadFile = File(...)):
@@ -104,18 +113,19 @@ def get_admin_user(user=Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return user
 
-# Registration endpoint (enabled for manual user creation)
+
+# Registration endpoint (accepts JSON)
 @app.post("/register")
-def register(username: str, password: str, role: str = "user", dob: str = "", phone: str = ""):
-    if role not in ["user", "admin"]:
-        raise HTTPException(status_code=400, detail="Role must be 'user' or 'admin'")
-    if role == "admin":
+def register(request: RegisterRequest):
+    if request.role not in ["user", "admin"]:
+        return {"error": "Role must be 'user' or 'admin'"}, 400
+    if request.role == "admin":
         admin_count = users_collection.count_documents({"role": "admin"})
         if admin_count >= 4:
-            raise HTTPException(status_code=400, detail="Maximum number of admin users (4) reached")
-    user = create_user(username, password, role, dob, phone)
+            return {"error": "Maximum number of admin users (4) reached"}, 400
+    user = create_user(request.username, request.password, request.role, request.dob, request.phone)
     if not user:
-        raise HTTPException(status_code=400, detail="Username already exists")
+        return {"error": "Username already exists"}, 400
     return {"message": "User registered successfully"}
 
 # Login endpoint (for demonstration, returns success message)
