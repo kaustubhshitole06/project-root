@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role-Based Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+        }
+        .container {
+            max-width: 520px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 32px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #2a3b4c;
+        }
+        .tab-bar {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .tab-bar button {
+            background: #f0f4fa;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            padding: 10px 32px;
+            margin: 0 2px;
+            font-size: 16px;
+            color: #2a3b4c;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .tab-bar button:disabled {
+            background: #2a3b4c;
+            color: #fff;
+            cursor: default;
+        }
+        .section {
+            background: #f8fafc;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            padding: 24px 16px;
+            margin-bottom: 32px;
+        }
+        input, button, select {
+            margin: 8px 0;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            border: 1px solid #dbe2ea;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #2a3b4c;
+            color: #fff;
+            border: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background: #3b4f65;
+        }
+        .result, .error {
+            margin-top: 16px;
+            word-break: break-all;
+        }
+        .error {
+            color: #d00;
+        }
+        .hidden {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+        }
+        th {
+            background: #f0f4fa;
+            color: #2a3b4c;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        ul {
+            margin: 0;
+            padding-left: 16px;
+        }
+        a {
+            color: #2a3b4c;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Role-Based Dashboard</h2>
+        <div class="tab-bar">
+            <button id="loginTab" onclick="toggleTab('login')">Login</button>
+            <button id="registerTab" onclick="toggleTab('register')">Register</button>
+        </div>
+        <div class="section" id="loginSection">
+            <h3>Login</h3>
+            <input type="text" id="loginUsername" placeholder="Username" required />
+            <input type="password" id="loginPassword" placeholder="Password" required />
+            <button onclick="login()">Login</button>
+            <div class="error" id="loginError"></div>
+        </div>
+        <div class="section hidden" id="registerSection">
+            <h3>Register</h3>
+            <input type="text" id="regUsername" placeholder="Username" required />
+            <input type="password" id="regPassword" placeholder="Password" required />
+            <select id="regRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+            </select>
+            <input type="text" id="regDob" placeholder="Date of Birth (YYYY-MM-DD)" />
+            <input type="text" id="regPhone" placeholder="Phone Number" />
+            <button onclick="register()">Register</button>
+            <div class="result" id="registerResult"></div>
+        </div>
+        <div class="section hidden" id="userSection">
+            <h3>User Profile</h3>
+            <div id="userInfo"></div>
+            <input type="password" id="newPassword" placeholder="New Password" />
+            <button onclick="updatePassword()">Update Password</button>
+            <div class="result" id="passwordResult"></div>
+            <h3>Upload File</h3>
+            <input type="file" id="fileInput" />
+            <button onclick="uploadFile()">Upload</button>
+            <div class="result" id="uploadResult"></div>
+        </div>
+        <div class="section hidden" id="adminSection">
+            <h3>Admin Panel</h3>
+            <button onclick="getAllUsers()">View All Users</button>
+            <div class="result" id="usersResult"></div>
+        </div>
+    </div>
+    <script>
+        function toggleTab(tab) {
+            if (tab === 'login') {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('registerSection').classList.add('hidden');
+                document.getElementById('loginTab').disabled = true;
+                document.getElementById('registerTab').disabled = false;
+            } else {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('registerSection').classList.remove('hidden');
+                document.getElementById('loginTab').disabled = false;
+                document.getElementById('registerTab').disabled = true;
+            }
+        }
+        let username = "";
+        let password = "";
+        let role = "";
+
+        function showSection(id) {
+            document.getElementById('registerSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('userSection').classList.add('hidden');
+            document.getElementById('adminSection').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+    // Show login tab by default
+    toggleTab('login');
+
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('regRole').value;
+            const dob = document.getElementById('regDob').value;
+            const phone = document.getElementById('regPhone').value;
+            document.getElementById('registerResult').textContent = '';
+            try {
+                const params = new URLSearchParams({ username, password, role, dob, phone });
+                const res = await fetch('/register?' + params.toString(), {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                document.getElementById('registerResult').textContent = data.message;
+                // After registration, show login section
+                showSection('loginSection');
+            } catch (e) {
+                document.getElementById('registerResult').textContent = 'Registration failed.';
+            }
+        }
+
+        async function login() {
+            username = document.getElementById('loginUsername').value;
+            password = document.getElementById('loginPassword').value;
+            document.getElementById('loginError').textContent = '';
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Login failed');
+                }
+                const data = await res.json();
+                role = data.role;
+                showSection('userSection');
+                getMe();
+                if (role === 'admin') {
+                    document.getElementById('adminSection').classList.remove('hidden');
+                }
+            } catch (e) {
+                document.getElementById('loginError').textContent = e.message;
+            }
+        }
+
+        async function getMe() {
+            try {
+                const res = await fetch('/me', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+                const data = await res.json();
+                document.getElementById('userInfo').textContent = `Username: ${data.username}, Role: ${data.role}`;
+            } catch (e) {
+                document.getElementById('userInfo').textContent = 'Failed to load profile.';
+            }
+        }
+
+        async function updatePassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            document.getElementById('passwordResult').textContent = '';
+            try {
+                const res = await fetch('/me/password?new_password=' + encodeURIComponent(newPassword), {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+                const data = await res.json();
+                document.getElementById('passwordResult').textContent = data.message;
+            } catch (e) {
+                document.getElementById('passwordResult').textContent = 'Failed to update password.';
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                document.getElementById('uploadResult').textContent = 'Please select a file.';
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            document.getElementById('uploadResult').textContent = '';
+            try {
+                const res = await fetch('/upload_file', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                document.getElementById('uploadResult').innerHTML = `${data.message}<br><a href="${data.url}" target="_blank">${data.url}</a>`;
+            } catch (e) {
+                document.getElementById('uploadResult').textContent = 'Failed to upload file.';
+            }
+        }
+
+        async function getAllUsers() {
+            document.getElementById('usersResult').textContent = '';
+            try {
+                // Try to get users with file details first
+                let res = await fetch('/admin/users/details', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(username + ':' + password)
+                    }
+                });
+                let data = await res.json();
+                let users = data.users || [];
+                if (!users.length) {
+                    // fallback to basic users endpoint
+                    res = await fetch('/admin/users', {
+                        headers: {
+                            'Authorization': 'Basic ' + btoa(username + ':' + password)
+                        }
+                    });
+                    data = await res.json();
+                    users = data.users || [];
+                }
+                if (!users.length) {
+                    document.getElementById('usersResult').textContent = 'No users found.';
+                    return;
+                }
+                let html = '<table border="1" style="width:100%;border-collapse:collapse;"><thead><tr>' +
+                    '<th>Username</th><th>Role</th><th>DOB</th><th>Phone</th><th>Files</th></tr></thead><tbody>';
+                // Helper to make URLs clickable
+                function makeClickable(text) {
+                    if (!text) return '';
+                    // Simple regex for URLs (http/https)
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    return text.replace(urlRegex, url => `<a href="${url}" target="_blank">${url}</a>`);
+                }
+                users.forEach(user => {
+                    html += `<tr><td>${makeClickable(user.username)}</td><td>${makeClickable(user.role)}</td><td>${makeClickable(user.dob)}</td><td>${makeClickable(user.phone)}</td><td>`;
+                    if (user.files && user.files.length) {
+                        html += '<ul style="margin:0;padding-left:16px;">';
+                        user.files.forEach(file => {
+                            html += `<li><a href="${file.file_url}" target="_blank">${file.filename}</a></li>`;
+                        });
+                        html += '</ul>';
+                    } else {
+                        html += '—';
+                    }
+                    html += '</td></tr>';
+                });
+                html += '</tbody></table>';
+                document.getElementById('usersResult').innerHTML = html;
+            } catch (e) {
+                document.getElementById('usersResult').textContent = 'Failed to load users.';
+            }
+        }
+    </script>
+</body>
+</html>
