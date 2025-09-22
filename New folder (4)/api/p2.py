@@ -33,10 +33,10 @@ app = FastAPI()
 # Serve static files
  # app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Route to serve index.html at root
-@app.get("/")
-def serve_index():
-    return FileResponse("index.html")
+ # Route to serve index.html at root (disabled for Vercel static hosting)
+ # @app.get("/")
+ # def serve_index():
+ #     return FileResponse("index.html")
 
 class FileUploadResponse(BaseModel):
     url: str
