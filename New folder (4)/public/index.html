@@ -190,14 +190,21 @@
             const phone = document.getElementById('regPhone').value;
             document.getElementById('registerResult').textContent = '';
             try {
-                const params = new URLSearchParams({ username, password, role, dob, phone });
-                const res = await fetch('/api/register?' + params.toString(), {
-                    method: 'POST'
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, role, dob, phone })
                 });
                 const data = await res.json();
-                document.getElementById('registerResult').textContent = data.message;
-                // After registration, show login section
-                showSection('loginSection');
+                if (data.message) {
+                    document.getElementById('registerResult').textContent = data.message;
+                    // After registration, show login section
+                    showSection('loginSection');
+                } else if (data.error) {
+                    document.getElementById('registerResult').textContent = data.error;
+                } else {
+                    document.getElementById('registerResult').textContent = 'Registration failed.';
+                }
             } catch (e) {
                 document.getElementById('registerResult').textContent = 'Registration failed.';
             }
