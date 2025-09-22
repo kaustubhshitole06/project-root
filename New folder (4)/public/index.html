@@ -191,7 +191,7 @@
             document.getElementById('registerResult').textContent = '';
             try {
                 const params = new URLSearchParams({ username, password, role, dob, phone });
-                const res = await fetch('/register?' + params.toString(), {
+                const res = await fetch('/api/register?' + params.toString(), {
                     method: 'POST'
                 });
                 const data = await res.json();
@@ -208,7 +208,7 @@
             password = document.getElementById('loginPassword').value;
             document.getElementById('loginError').textContent = '';
             try {
-                const res = await fetch('/login', {
+                const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Basic ' + btoa(username + ':' + password)
@@ -232,7 +232,7 @@
 
         async function getMe() {
             try {
-                const res = await fetch('/me', {
+                const res = await fetch('/api/me', {
                     headers: {
                         'Authorization': 'Basic ' + btoa(username + ':' + password)
                     }
@@ -248,7 +248,7 @@
             const newPassword = document.getElementById('newPassword').value;
             document.getElementById('passwordResult').textContent = '';
             try {
-                const res = await fetch('/me/password?new_password=' + encodeURIComponent(newPassword), {
+                const res = await fetch('/api/me/password?new_password=' + encodeURIComponent(newPassword), {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Basic ' + btoa(username + ':' + password)
@@ -271,7 +271,7 @@
             formData.append('file', fileInput.files[0]);
             document.getElementById('uploadResult').textContent = '';
             try {
-                const res = await fetch('/upload_file', {
+                const res = await fetch('/api/upload_file', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Basic ' + btoa(username + ':' + password)
@@ -289,7 +289,7 @@
             document.getElementById('usersResult').textContent = '';
             try {
                 // Try to get users with file details first
-                let res = await fetch('/admin/users/details', {
+                let res = await fetch('/api/admin/users/details', {
                     headers: {
                         'Authorization': 'Basic ' + btoa(username + ':' + password)
                     }
@@ -298,7 +298,7 @@
                 let users = data.users || [];
                 if (!users.length) {
                     // fallback to basic users endpoint
-                    res = await fetch('/admin/users', {
+                    res = await fetch('/api/admin/users', {
                         headers: {
                             'Authorization': 'Basic ' + btoa(username + ':' + password)
                         }
@@ -341,3 +341,4 @@
     </script>
 </body>
 </html>
+
