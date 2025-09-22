@@ -115,18 +115,37 @@ def get_admin_user(user=Depends(get_current_user)):
 
 
 # Registration endpoint (accepts JSON)
+
 @app.post("/register")
 def register(request: RegisterRequest):
-    if request.role not in ["user", "admin"]:
-        return {"error": "Role must be 'user' or 'admin'"}, 400
-    if request.role == "admin":
-        admin_count = users_collection.count_documents({"role": "admin"})
-        if admin_count >= 4:
-            return {"error": "Maximum number of admin users (4) reached"}, 400
-    user = create_user(request.username, request.password, request.role, request.dob, request.phone)
-    if not user:
-        return {"error": "Username already exists"}, 400
-    return {"message": "User registered successfully"}
+    import traceback
+    print(f"Registration attempt: username={request.username}, role={request.role}, dob={request.dob}, phone={request.phone}")
+    try:
+        # Check MongoDB connection
+        try:
+            client.admin.command('ping')
+        except Exception as db_exc:
+            print(f"MongoDB connection error: {db_exc}")
+            return {"error": "Database connection failed. Check credentials and network."}
+
+        if request.role not in ["user", "admin"]:
+            print("Invalid role provided.")
+            return {"error": "Role must be 'user' or 'admin'"}
+        if request.role == "admin":
+            admin_count = users_collection.count_documents({"role": "admin"})
+            print(f"Current admin count: {admin_count}")
+            if admin_count >= 4:
+                print("Admin limit reached.")
+                return {"error": "Maximum number of admin users (4) reached"}
+        user = create_user(request.username, request.password, request.role, request.dob, request.phone)
+        if not user:
+            print("Username already exists.")
+            return {"error": "Username already exists"}
+        print("User registered successfully.")
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        print(f"Exception in /register: {e}\n{traceback.format_exc()}")
+        return {"error": f"Registration failed: {str(e)}"}
 
 # Login endpoint (for demonstration, returns success message)
 @app.post("/login")
